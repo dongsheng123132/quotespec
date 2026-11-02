@@ -1,10 +1,15 @@
 # QuoteSpec
 
+[![conformance](https://github.com/dongsheng123132/quotespec/actions/workflows/conformance.yml/badge.svg)](https://github.com/dongsheng123132/quotespec/actions/workflows/conformance.yml)
+[![pages](https://github.com/dongsheng123132/quotespec/actions/workflows/pages.yml/badge.svg)](https://dongsheng123132.github.io/quotespec/)
+
+> **在线演示：[dongsheng123132.github.io/quotespec/](https://dongsheng123132.github.io/quotespec/)**
+
 > **B2B 制造业报价的开源协议** —— 把「报价单」从一个自由文本，变成一份可校验的 JSON 对象。
 > RFQ（询价）→ Quote（报价）→ 比价 → 下单，全链路用同一套字段说话。
 
 ```bash
-git clone https://github.com/<your-org>/quotespec && cd quotespec
+git clone https://github.com/dongsheng123132/quotespec && cd quotespec
 python3 conformance/validate.py --dir conformance/cases/   # 13/13
 python3 demo/run_demo.py --mock                            # 6 家 AI 报价，离线 1 秒，不需要任何 key
 ```
