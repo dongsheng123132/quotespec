@@ -1,0 +1,650 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quotespec.dev/schema/quotespec-v0.2.json",
+  "title": "QuoteSpec Protocol v0.2",
+  "description": "v0.2 在 v0.1 基础上吸收三个旧 skill 的机制：工件指纹、价格来源、待确认项与金额区间、成本分层、比较前提、状态机与幂等。",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RFQ"
+    },
+    {
+      "$ref": "#/$defs/Quote"
+    }
+  ],
+  "$defs": {
+    "Money": {
+      "type": "object",
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "examples": [
+            "CNY",
+            "USD",
+            "EUR"
+          ]
+        }
+      }
+    },
+    "PartyRef": {
+      "type": "object",
+      "required": [
+        "party_id",
+        "verified"
+      ],
+      "properties": {
+        "party_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "legal_name": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "能力标签，如 cnc_milling / anodizing / injection_molding"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "FileRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "release"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "examples": [
+            "step",
+            "dwg",
+            "pdf",
+            "xlsx"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string",
+          "enum": [
+            "L0_redacted_features",
+            "L1_full_auth",
+            "L2_production"
+          ],
+          "description": "L0 脱敏特征（广播即给）；L1 完整文件（NDA 后）；L2 生产文件（托管付款后）"
+        }
+      }
+    },
+    "QuantityTier": {
+      "type": "object",
+      "required": [
+        "qty",
+        "unit"
+      ],
+      "properties": {
+        "qty": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "examples": [
+            "piece",
+            "set",
+            "carton",
+            "kg",
+            "cbm"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "PriceTier": {
+      "type": "object",
+      "required": [
+        "qty",
+        "unit",
+        "unit_price",
+        "currency",
+        "moq_ok"
+      ],
+      "properties": {
+        "qty": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string"
+        },
+        "unit_price": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "moq_ok": {
+          "type": "boolean"
+        },
+        "moq": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "LineItem": {
+      "type": "object",
+      "required": [
+        "line_id",
+        "category",
+        "quantity_tiers",
+        "spec"
+      ],
+      "properties": {
+        "line_id": {
+          "type": "string",
+          "minLength": 1,
+          "examples": [
+            "L1",
+            "L2"
+          ]
+        },
+        "category": {
+          "type": "string",
+          "examples": [
+            "cnc_part",
+            "sheet_metal",
+            "packaging",
+            "logistics",
+            "design_fee"
+          ]
+        },
+        "quantity_tiers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/QuantityTier"
+          }
+        },
+        "spec": {
+          "type": "object",
+          "description": "按 category 的 spec 约定填写；见协议文档 3.3 节",
+          "additionalProperties": true
+        },
+        "required_by": {
+          "type": "string",
+          "format": "date"
+        },
+        "acceptance": {
+          "type": "object",
+          "properties": {
+            "inspection": {
+              "type": "string",
+              "examples": [
+                "AQL 1.0",
+                "全检"
+              ]
+            },
+            "sample": {
+              "type": "string",
+              "examples": [
+                "first_article",
+                "random"
+              ]
+            }
+          }
+        },
+        "file_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FileRef"
+          }
+        }
+      }
+    },
+    "RFQ": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "type",
+        "id",
+        "buyer",
+        "title",
+        "deadline",
+        "currency",
+        "lines"
+      ],
+      "properties": {
+        "protocol": {
+          "const": "quotespec/0.1"
+        },
+        "type": {
+          "const": "rfq"
+        },
+        "id": {
+          "type": "string"
+        },
+        "buyer": {
+          "$ref": "#/$defs/PartyRef"
+        },
+        "title": {
+          "type": "string"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/LineItem"
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "incoterms": {
+              "type": "string",
+              "examples": [
+                "FOB Shenzhen",
+                "DDP Los Angeles"
+              ]
+            },
+            "tax": {
+              "type": "string",
+              "examples": [
+                "VAT 13% included"
+              ]
+            },
+            "payment_terms": {
+              "type": "string",
+              "examples": [
+                "30% deposit, 70% before shipment"
+              ]
+            },
+            "max_broadcast": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "Quote": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "type",
+        "id",
+        "rfq_id",
+        "line_id",
+        "supplier",
+        "pricing",
+        "lead_time_days",
+        "valid_until",
+        "assumptions",
+        "exclusions",
+        "responsibility",
+        "ai",
+        "artifact",
+        "price_source",
+        "comparison_basis"
+      ],
+      "properties": {
+        "protocol": {
+          "const": "quotespec/0.1"
+        },
+        "type": {
+          "const": "quote"
+        },
+        "id": {
+          "type": "string"
+        },
+        "rfq_id": {
+          "type": "string"
+        },
+        "line_id": {
+          "type": "string"
+        },
+        "supplier": {
+          "$ref": "#/$defs/PartyRef"
+        },
+        "pricing": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/PriceTier"
+          }
+        },
+        "lead_time_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "报价成立的前提；为空视为不合格报价"
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "不含项：模具费、运费、税费等必须显式列出"
+        },
+        "responsibility": {
+          "type": "object",
+          "required": [
+            "warranty_days"
+          ],
+          "properties": {
+            "warranty_days": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "penalty": {
+              "type": "string",
+              "examples": [
+                "延期 0.3%/天，上限 10%"
+              ]
+            },
+            "rerun_policy": {
+              "type": "string",
+              "examples": [
+                "非买方原因返工由供应商承担"
+              ]
+            }
+          }
+        },
+        "ai": {
+          "type": "object",
+          "required": [
+            "generated",
+            "human_confirmed"
+          ],
+          "properties": {
+            "generated": {
+              "type": "boolean"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "human_confirmed": {
+              "type": "boolean"
+            },
+            "model": {
+              "type": "string",
+              "examples": [
+                "openai/gpt-4o-mini",
+                "openai/gpt-4o-mini"
+              ]
+            }
+          }
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FileRef"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "object",
+          "required": [
+            "kind",
+            "sha256"
+          ],
+          "description": "报价绑定的工件版本。图纸/规格一变，报价自动失效。",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "drawing",
+                "spec",
+                "none"
+              ]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{8,64}$"
+            },
+            "captured_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "price_source": {
+          "type": "string",
+          "enum": [
+            "user_price_list",
+            "history",
+            "vendor_inquiry",
+            "pending"
+          ],
+          "description": "价格来源。pending 表示尚无价格，此时 pricing 必须为空、pending_items 必须非空。"
+        },
+        "pending_items": {
+          "type": "array",
+          "description": "待确认项：未定型号/未定工艺不编价，只给金额影响区间。",
+          "items": {
+            "type": "object",
+            "required": [
+              "item",
+              "amount_impact",
+              "blocks_award"
+            ],
+            "properties": {
+              "item": {
+                "type": "string"
+              },
+              "amount_impact": {
+                "type": "object",
+                "required": [
+                  "min",
+                  "max",
+                  "currency"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "max": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                  }
+                }
+              },
+              "blocks_award": {
+                "type": "boolean"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "cost_breakdown": {
+          "type": "object",
+          "description": "成本分层。辅材与人工不得摊进元件单价，否则报价不可比。",
+          "required": [
+            "total"
+          ],
+          "properties": {
+            "material": {
+              "type": "number",
+              "minimum": 0
+            },
+            "consumables": {
+              "type": "number",
+              "minimum": 0
+            },
+            "labor": {
+              "type": "number",
+              "minimum": 0
+            },
+            "overhead": {
+              "type": "number",
+              "minimum": 0
+            },
+            "margin": {
+              "type": "number",
+              "minimum": 0
+            },
+            "total": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "comparison_basis": {
+          "type": "object",
+          "description": "比较前提。口径不一致时禁止宣称“最低总价”。",
+          "required": [
+            "tax_included",
+            "freight_included",
+            "currency"
+          ],
+          "properties": {
+            "tax_included": {
+              "type": "boolean"
+            },
+            "freight_included": {
+              "type": "boolean"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "incoterms": {
+              "type": "string"
+            },
+            "lead_time_basis": {
+              "type": "string"
+            }
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "published",
+            "accepted",
+            "rejected",
+            "awarded"
+          ]
+        },
+        "state_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8
+        }
+      }
+    },
+    "Credit": {
+      "type": "object",
+      "properties": {
+        "rfq_responded_30d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "median_response_minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "quotes_submitted_90d": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "award_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "price_vs_final_delta": {
+          "type": "number"
+        },
+        "on_time_delivery": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "first_pass_inspection": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dispute_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sample_size_ok": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

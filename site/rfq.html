@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuoteSpec · 询盘结构化工具</title>
+<style>
+  :root{--bg:#f5f6f8;--card:#fff;--line:#e4e7ec;--text:#1f2937;--muted:#6b7280;
+        --accent:#2563eb;--accent-weak:#eff4ff;--warn:#c2410c;--warn-weak:#fff4ed;
+        --ok:#15803d;--ok-weak:#f0fdf4;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px 60px}
+  header{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  header h1{font-size:20px;margin:0;font-weight:600}
+  header .sub{color:var(--muted);font-size:13px}
+  .tagline{color:var(--muted);font-size:13px;margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  h2{font-size:15px;margin:0 0 10px;font-weight:600}
+  .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+  textarea{width:100%;min-height:300px;resize:vertical;border:1px solid var(--line);border-radius:8px;
+           padding:12px 14px;font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);
+           outline:none;background:#fcfcfd}
+  textarea:focus{border-color:var(--accent);background:#fff}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .btn{border:0;border-radius:7px;padding:8px 16px;font-size:14px;cursor:pointer;background:var(--accent);color:#fff}
+  .btn:hover{filter:brightness(.95)}
+  .btn.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
+  .btn.small{padding:5px 11px;font-size:12.5px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #f0f2f5;vertical-align:top}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  .st{font-size:11.5px;padding:1px 7px;border-radius:4px;white-space:nowrap}
+  .st.ok{background:var(--ok-weak);color:var(--ok)}
+  .st.miss{background:var(--warn-weak);color:var(--warn)}
+  .miss-list{margin:0;padding-left:18px;font-size:13.5px}
+  .miss-list li{margin:5px 0}
+  .miss-list .grp{color:var(--muted);font-size:12px}
+  pre{background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;
+      font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:300px;margin:0}
+  details summary{cursor:pointer;color:var(--accent);font-size:13px;margin:10px 0 8px}
+  .note{background:var(--accent-weak);border:1px solid #cddcf9;border-radius:8px;padding:10px 12px;
+        font-size:12.5px;color:#1e3a8a;margin-top:14px}
+  .kpi{display:flex;gap:18px;margin:0 0 14px;font-size:12.5px;color:var(--muted)}
+  .kpi b{color:var(--text);font-size:16px;font-weight:600;display:block;line-height:1.2}
+  .empty{color:var(--muted);font-size:13px;padding:18px 0}
+  .foot{color:var(--muted);font-size:12px;margin-top:22px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>QuoteSpec</h1>
+    <span class="sub">询盘结构化工具 · 原型</span>
+  </header>
+  <p class="tagline">粘贴一段买家询盘（中英文都行），自动拆成结构化询价单，并列出<b>还缺什么</b>。本工具<b>不生成价格</b>——价格由供应商 AI 按 QuoteSpec 协议回填。</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>① 粘贴询盘</h2>
+      <p class="hint">支持邮件、微信、阿里询盘、WhatsApp 原文。</p>
+      <textarea id="input" placeholder="把买家的询盘原样粘进来……"></textarea>
+      <div class="row">
+        <button class="btn" id="parse">解析成结构化询价单</button>
+        <button class="btn ghost small" id="sampleEn">英文示例</button>
+        <button class="btn ghost small" id="sampleZh">中文示例</button>
+        <button class="btn ghost small" id="clear">清空</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 结构化结果</h2>
+      <p class="hint">只有"已确认"的字段才进 RFQ；没确认的进缺失清单，不猜。</p>
+      <div id="out"><div class="empty">解析后显示在这里。</div></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>为什么不直接给价格：</b>制造业报价里，公差、材质、表面处理、数量档、交期任一不同，价格能差 2–10 倍。编一个价格 = 把风险转给买家。所以这一步只做「结构化 + 找漏」，报价交给供应商的 AI，每个价格都必须带来源（<code>price_source</code>）。
+  </div>
+
+  <div class="foot">QuoteSpec / QuoteSpec v0.2 原型 · 无后端、纯本地解析 · 数据不离开浏览器</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const MATERIALS = ["6061","7075","5052","304","316","aluminum","aluminium","stainless","steel","abs","pc","nylon","pom","铝","铝合金","不锈钢","钢","尼龙","abs","亚克力"];
+const PROCESS = {cnc:["cnc","machin","铣","车","加工"], sheet:["sheet metal","钣金","冲压","折弯","laser cut","激光切"],
+                 injection:["injection","注塑"], packaging:["packaging","包装","box","carton","礼盒"],
+                 logistics:["shipping","freight","logistics","运输","海运","空运","快递","logistics","delivery to"],
+                 design:["design","设计","3d model","建模"]};
+const SURFACE = ["anodiz","阳极","powder coat","喷粉","painting","喷漆","electroplat","电镀","zinc","镀锌","brushed","拉丝"];
+
+function detectCategory(t){
+  const s = t.toLowerCase();
+  for (const [cat, kws] of Object.entries(PROCESS)) {
+    if (kws.some(k => s.includes(k))) return cat === "sheet" ? "sheet_metal" : cat;
+  }
+  return "other";
+}
+function findMaterial(t){
+  const s = t.toLowerCase();
+  const hit = MATERIALS.find(m => s.includes(m));
+  return hit ? hit.toUpperCase() : null;
+}
+function findQty(t){
+  // 3000 pcs / 3,000 pieces / 30000件 / 18.5 cbm
+  const m = t.match(/([\d][\d,\.]*)\s*(pcs|pieces?|units?|sets?|件|个|套|cbm|kg|tons?|吨)/i);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(/,/g, ""));
+  if (Number.isNaN(n)) return null;
+  const unitMap = {pcs:"piece",piece:"piece",pieces:"piece",unit:"piece",units:"piece",set:"set",sets:"set",件:"piece",个:"piece",套:"set",cbm:"cbm",kg:"kg",ton:"ton",tons:"ton",吨:"ton"};
+  return {qty: n, unit: unitMap[m[2].toLowerCase()] || m[2].toLowerCase()};
+}
+function findTolerance(t){
+  const m = t.match(/±\s?[\d.]+\s?(mm|毫米)?/);
+  return m ? m[0].replace(/\s+/g, "") : null;
+}
+function findSurface(t){
+  const s = t.toLowerCase();
+  const hit = SURFACE.find(k => s.includes(k));
+  if (!hit) return null;
+  if (hit.startsWith("anodiz")) return "anodized";
+  if (hit.startsWith("electroplat")) return "electroplated";
+  if (hit.startsWith("powder")) return "powder_coated";
+  if (hit.startsWith("paint")) return "painted";
+  return hit;
+}
+function findTerms(t){
+  const m = t.match(/\b(FOB|CIF|DDP|DDU|EXW)\b\s*([A-Za-z\u4e00-\u9fa5 ]{0,18})?/i);
+  return m ? (m[1].toUpperCase() + (m[2] ? " " + m[2].trim() : "")) : null;
+}
+function findDate(t){
+  const m = t.match(/(20\d{2}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+function findDest(t){
+  let m = t.match(/(?:deliver(?:y)?\s+to|ship(?:ping)?\s+to|destination|目的地|交到|发到|运到)\s*[:：]?\s*([A-Za-z\u4e00-\u9fa5][A-Za-z\u4e00-\u9fa5 ,\-]{1,28})/i);
+  if (!m) m = t.match(/(?:^|\s)to\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)/);
+  if (!m) return null;
+  return m[1].trim().replace(/[ ,;.]+$/, "").replace(/\s+(by|before|on|at|no later than)$/i, "").trim();
+}
+function findDrawing(t){
+  const s = t.toLowerCase();
+  if (s.includes("step") || s.includes(".stp")) return "step";
+  if (s.includes("dwg")) return "dwg";
+  if (s.includes("dxf")) return "dxf";
+  if (s.includes("pdf")) return "pdf";
+  if (s.match(/图纸|drawing|attached/)) return "unspecified";
+  return null;
+}
+
+function parse(text){
+  const t = (text || "").trim();
+  if (!t) return null;
+  const cat = detectCategory(t);
+  const qty = findQty(t);
+  const material = findMaterial(t);
+  const tol = findTolerance(t);
+  const surface = findSurface(t);
+  const terms = findTerms(t);
+  const date = findDate(t);
+  const dest = findDest(t);
+  const drawing = findDrawing(t);
+
+  const confirmed = {category: cat !== "other", quantity: !!qty, material: !!material,
+                     tolerance: !!tol, surface: !!surface, delivery: !!(dest || date),
+                     incoterms: !!terms, drawing: !!drawing};
+
+  const blockers = [], spec = [], commercial = [];
+  if (!qty) blockers.push("数量与数量档（300 件和 3 万件必须分开报）");
+  if (!material) blockers.push("材质牌号（6061-T6 和 7075 价差很大）");
+  if (!drawing) blockers.push("图纸或参考样（STEP/DWG/PDF，决定能不能报价）");
+  if (cat === "other") blockers.push("品类判断（现在无法归类到 CNC / 钣金 / 注塑 / 包装 / 物流）");
+  if (!tol) spec.push("公差要求（一般公差还是关键尺寸 ±0.02）");
+  if (!surface) spec.push("表面处理（阳极氧化色号 / 喷粉 / 电镀）");
+  spec.push("包装要求（独立包装 / 说明书 / 标签）");
+  if (!date) commercial.push("交期要求（哪一天必须到）");
+  if (!terms) commercial.push("贸易条款（FOB / CIF / DDP）");
+  if (!dest) commercial.push("交付地点（城市或港口）");
+  commercial.push("目标价或预算区间（有就给，没有不猜）");
+
+  const rfq = {
+    protocol: "quotespec/0.2",
+    type: "rfq",
+    id: "rfq_draft_" + Math.random().toString(36).slice(2, 8),
+    buyer: {party_id: "buyer_draft", verified: false},
+    title: (t.split(/[\n。.]/)[0] || "询盘").slice(0, 60),
+    deadline: null,
+    currency: "CNY",
+    lines: [{
+      line_id: "L1",
+      category: cat,
+      quantity_tiers: qty ? [{qty: qty.qty, unit: qty.unit}] : [],
+      spec: {
+        material: material || null,
+        process: cat === "other" ? [] : [cat],
+        tolerance: tol || null,
+        surface: surface || null,
+        drawing: drawing ? {kind: drawing, release: "L0_redacted_features"} : null
+      },
+      required_by: date,
+      acceptance: null,
+      file_refs: []
+    }],
+    constraints: {incoterms: terms, destination: dest, currency: "CNY"},
+    notes: "由 QuoteSpec 工具从原始询盘解析；未确认字段见缺失清单，不做推测。"
+  };
+  return {rfq, confirmed, blockers, spec, commercial, raw: t};
+}
+
+function render(r){
+  const f = r.rfq.lines[0];
+  const rows = [
+    ["品类", f.category, r.confirmed.category],
+    ["数量", f.quantity_tiers.length ? `${f.quantity_tiers[0].qty} ${f.quantity_tiers[0].unit}` : "—", r.confirmed.quantity],
+    ["材质", f.spec.material || "—", r.confirmed.material],
+    ["公差", f.spec.tolerance || "—", r.confirmed.tolerance],
+    ["表面处理", f.spec.surface || "—", r.confirmed.surface],
+    ["交期", f.required_by || "—", !!f.required_by],
+    ["贸易条款", r.rfq.constraints.incoterms || "—", r.confirmed.incoterms],
+    ["交付地点", r.rfq.constraints.destination || "—", !!r.rfq.constraints.destination],
+    ["图纸", f.spec.drawing ? f.spec.drawing.kind : "—", r.confirmed.drawing],
+  ];
+  const confirmedCount = Object.values(r.confirmed).filter(Boolean).length;
+
+  const miss = (title, arr, cls) => arr.length
+    ? `<div style="margin:10px 0 2px" class="grp"><b>${title}</b></div><ul class="miss-list">${arr.map(x=>`<li>${x}</li>`).join("")}</ul>` : "";
+
+  $("#out").innerHTML = `
+    <div class="kpi">
+      <div><b>${confirmedCount}/9</b>字段已确认</div>
+      <div><b>${r.blockers.length}</b>阻断项</div>
+      <div><b>${r.spec.length + r.commercial.length}</b>待补细节</div>
+    </div>
+    <table>
+      <thead><tr><th>字段</th><th>解析值</th><th>状态</th></tr></thead>
+      <tbody>${rows.map(([k,v,ok])=>`<tr><td>${k}</td><td>${v}</td>
+        <td><span class="st ${ok?"ok":"miss"}">${ok?"已确认":"缺失"}</span></td></tr>`).join("")}</tbody>
+    </table>
+    ${miss("⛔ 阻断项（缺了不能报价）", r.blockers)}
+    ${miss("🔧 规格细节", r.spec)}
+    ${miss("💼 商务条件", r.commercial)}
+    <details>
+      <summary>查看 QuoteSpec v0.2 JSON（可复制给供应商 AI）</summary>
+      <pre id="json">${JSON.stringify(r.rfq, null, 2)}</pre>
+      <button class="btn ghost small" id="copy" style="margin-top:8px">复制 JSON</button>
+    </details>
+  `;
+  const btn = $("#copy");
+  if (btn) btn.onclick = async () => {
+    try { await navigator.clipboard.writeText(JSON.stringify(r.rfq, null, 2)); btn.textContent = "已复制"; }
+    catch { btn.textContent = "复制失败，请手动选择"; }
+  };
+}
+
+$("#parse").onclick = () => {
+  const r = parse($("#input").value);
+  if (!r) { $("#out").innerHTML = '<div class="empty">先粘一段询盘进来。</div>'; return; }
+  render(r);
+};
+$("#sampleEn").onclick = () => {
+  $("#input").value = "Hi, we need 3,000 pcs of aluminum 6061-T6 CNC machined brackets, anodized black, tolerance ±0.05mm. STEP drawing attached. Delivery to Los Angeles by 2026-12-15, FOB Shenzhen. Target price under $12/pc.";
+  $("#parse").click();
+};
+$("#sampleZh").onclick = () => {
+  $("#input").value = "我们需要 30000 件 6061 铝合金 CNC 加工件，阳极氧化黑色，公差 ±0.05，图纸是 STEP 格式，12 月 15 日前交到洛杉矶，深圳 FOB。";
+  $("#parse").click();
+};
+$("#clear").onclick = () => { $("#input").value = ""; $("#out").innerHTML = '<div class="empty">解析后显示在这里。</div>'; };
+if (location.hash === "#demo") { $("#sampleEn").click(); }
+</script>
+</body>
+</html>

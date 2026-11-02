@@ -1,0 +1,34 @@
+# ===== 内部运营材料（永不公开）=====
+out/
+.review/
+tools/panel/
+docs/03-yc-one-pager.md
+docs/04-yc-application.md
+docs/05-naming-and-oss.md
+docs/07-website-and-coldstart.md
+
+# ===== 生成物 =====
+demo/out/
+engine/__pycache__/
+*.log
+*.tmp
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ===== 本机凭据 / 网关（永不入库）=====
+.env
+.env.*
+!.env.example
+.cf-domain.json
+
+# ===== 编辑器 / 系统 =====
+.DS_Store
+.idea/
+.vscode/
+*.swp
+~$*

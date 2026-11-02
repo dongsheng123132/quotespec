@@ -1,0 +1,86 @@
+{
+  "protocol": "quotespec/0.2",
+  "type": "quote",
+  "id": "q_7f3a91c2",
+  "rfq_id": "rfq_2026_11_0001",
+  "line_id": "L1",
+  "supplier": {
+    "party_id": "sup_10237",
+    "legal_name": "东莞市示例精工有限公司",
+    "verified": true,
+    "capabilities": [
+      "cnc_milling",
+      "cnc_turning",
+      "anodizing"
+    ],
+    "regions": [
+      "CN-Dongguan"
+    ]
+  },
+  "pricing": [
+    {
+      "qty": 300,
+      "unit": "piece",
+      "unit_price": 42.5,
+      "currency": "CNY",
+      "moq_ok": true
+    },
+    {
+      "qty": 30000,
+      "unit": "piece",
+      "unit_price": 18.9,
+      "currency": "CNY",
+      "moq_ok": true
+    }
+  ],
+  "lead_time_days": 15,
+  "valid_until": "2026-11-16T18:00:00+08:00",
+  "assumptions": [
+    "按图纸公差 ±0.05mm 报价，关键尺寸 ±0.02mm 需二次确认",
+    "材料为 6061-T6 国产铝板，进口料另议",
+    "300 件为一次性交付；30000 件按 3 批交付"
+  ],
+  "exclusions": [
+    "开模/工装费 8,000 元（一次性，未含在单价内）",
+    "运费不含（买家指定货代）",
+    "表面处理超出氧化黑之外的工艺另计"
+  ],
+  "responsibility": {
+    "warranty_days": 180,
+    "penalty": "延期交付按合同额 0.3%/天赔付，上限 10%",
+    "rerun_policy": "非买方原因导致的返工由供应商承担全部费用"
+  },
+  "ai": {
+    "generated": true,
+    "confidence": 0.82,
+    "human_confirmed": true,
+    "model": "openai/gpt-4o-mini"
+  },
+  "attachments": [],
+  "notes": "首件确认后 3 个工作日内可上机。",
+  "artifact": {
+    "kind": "drawing",
+    "sha256": "3f9a1c7e",
+    "captured_at": "2026-11-02T10:00:00+08:00",
+    "note": "STEP 装配图 v3"
+  },
+  "price_source": "pending",
+  "comparison_basis": {
+    "tax_included": true,
+    "freight_included": false,
+    "currency": "CNY",
+    "incoterms": "FOB Shenzhen"
+  },
+  "cost_breakdown": {
+    "material": 8.2,
+    "consumables": 1.1,
+    "labor": 3.4,
+    "overhead": 1.8,
+    "margin": 2.0,
+    "total": 16.5
+  },
+  "pending_items": [],
+  "state": "published",
+  "state_version": 1,
+  "idempotency_key": "rfq_demo:sup_jingtuo:L1:1"
+}

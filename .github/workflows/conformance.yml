@@ -1,0 +1,24 @@
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: JSON 合法性
+        run: |
+          for f in schema/*.json samples/*.json conformance/cases/*.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+          done
+      - name: 一致性校验器（13 用例）
+        run: python3 conformance/validate.py --dir conformance/cases/
+      - name: 端到端 demo（--mock，不需要任何 key）
+        run: python3 demo/run_demo.py --mock

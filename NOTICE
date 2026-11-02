@@ -1,0 +1,27 @@
+QuoteSpec — an open protocol for B2B manufacturing quotes
+Copyright 2026 QuoteSpec contributors
+
+This product includes software developed by the QuoteSpec contributors
+(https://github.com/Quotespec).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+--------------------------------------------------------------------
+第三方说明 / Third-party notice
+
+本仓库的 demo 会在你提供 OPENAI_BASE_URL / OPENAI_API_KEY 时调用第三方模型
+服务，那些调用受各自服务条款约束，与本仓库许可无关。
+本仓库不含任何第三方模型权重。
+
+All company names appearing in samples/ and demo/ are fictional and
+marked as such. They do not refer to any real entity.
