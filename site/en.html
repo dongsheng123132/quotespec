@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QuoteSpec — Turn a Chinese supplier's quote into a table you can actually compare</title>
+<meta name="description" content="Send us the quote — a WeChat screenshot, a PDF, an Excel paste. We send back a normalized comparison table with missing terms flagged and lowballs caught.">
+<style>
+:root{
+  --ink:#1a1d21; --mute:#6b7280; --line:#e8eaed; --bg:#f7f8fa;
+  --blue:#185abd; --blue-ink:#124a9c; --soft:#eef4fd;
+  --red:#c0392b; --yellow:#b9770e; --green:#1e8449;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px}
+header{background:#fff;border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-weight:700;letter-spacing:.3px}
+.logo span{color:var(--blue)}
+.nav a{color:var(--mute);text-decoration:none;font-size:14px;margin-left:18px}
+.nav a.on{color:var(--blue-ink);font-weight:600}
+.hero{padding:56px 0 8px}
+h1{font-size:35px;line-height:1.25;margin:0 0 14px;font-weight:700;letter-spacing:-.6px}
+h1 em{font-style:normal;color:var(--blue)}
+.lede{font-size:18px;color:var(--mute);margin:0 0 26px;max-width:38em}
+.cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;
+  padding:13px 26px;border-radius:8px;font-weight:600;font-size:16px}
+.btn.ghost{background:#fff;color:var(--blue-ink);border:1px solid #c9d8ee}
+.note{color:var(--mute);font-size:13px;margin-top:10px}
+section{padding:44px 0}
+h2{font-size:21px;margin:0 0 8px;letter-spacing:-.2px}
+.sub{color:var(--mute);margin:0 0 22px;font-size:15px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px 24px}
+.grid{display:grid;gap:14px}
+@media(min-width:700px){.grid.g3{grid-template-columns:repeat(3,1fr)}}
+.pain{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.pain b{display:block;margin-bottom:6px;font-size:15px}
+.pain p{margin:0;color:var(--mute);font-size:14px;line-height:1.65}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:13px;background:#fbfcfd}
+.num{font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:20px;line-height:1.7}
+.tag.red{background:#fdeeec;color:var(--red)}
+.tag.yel{background:#fdf4e3;color:var(--yellow)}
+.tag.grn{background:#eaf6ef;color:var(--green)}
+.price{display:grid;gap:14px}
+@media(min-width:700px){.price{grid-template-columns:repeat(3,1fr)}}
+.plan{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px 20px;display:flex;flex-direction:column}
+.plan.hl{border-color:#b9cfee;box-shadow:0 2px 14px rgba(24,90,189,.08)}
+.plan .k{font-size:14px;color:var(--mute)}
+.plan .p{font-size:30px;font-weight:700;margin:6px 0 2px;letter-spacing:-1px}
+.plan .p small{font-size:14px;font-weight:400;color:var(--mute);letter-spacing:0}
+.plan ul{margin:12px 0 16px;padding-left:18px;color:var(--mute);font-size:14px}
+.plan li{margin:5px 0}
+.plan .btn{text-align:center;margin-top:auto}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{position:relative;padding:0 0 18px 42px;border-left:2px solid var(--soft);margin-left:13px}
+.steps li:last-child{border-color:transparent;padding-bottom:0}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:-14px;top:0;
+  width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;
+  display:flex;align-items:center;justify-content:center;font-weight:600}
+.steps b{display:block;font-size:15px;margin-bottom:2px}
+.steps span{color:var(--mute);font-size:14px}
+details{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:600;font-size:15px}
+details p{margin:10px 0 0;color:var(--mute);font-size:14px}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:28px 0 48px;color:var(--mute);font-size:13px}
+footer a{color:var(--blue-ink);text-decoration:none}
+.hint{background:var(--soft);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--blue-ink);margin-top:14px}
+</style>
+</head>
+<body>
+
+<header><div class="wrap nav">
+  <div class="logo">Quote<span>Spec</span></div>
+  <nav>
+    <a href="#how">How it works</a>
+    <a href="#sample">Sample</a>
+    <a href="#price">Pricing</a>
+    <a href="#faq">FAQ</a>
+    <a class="on" href="./checkup.html">中文</a>
+  </nav>
+</div></header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Your supplier quoted you<br>in WeChat. Here it is<br><em>as a table.</em></h1>
+    <p class="lede">
+      Sourcing from China means quoting by chat: a sentence, a photo of a handwritten sheet, an Excel with
+      no headers. Three factories, three formats, three different definitions of "included".
+      Send us the raw quote — we send back one comparable table, with the missing terms flagged
+      and the lowballs caught.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#price">See pricing</a>
+      <a class="btn ghost" href="#sample">See a real report</a>
+    </div>
+    <p class="note">No signup. No software. Send the quote, get the report.</p>
+  </div>
+
+  <section>
+    <div class="grid g3">
+      <div class="pain">
+        <b>The quotes don't compare</b>
+        <p>Three say "included tax". Only one actually is. Two say "ex-works" and nobody mentions freight.</p>
+      </div>
+      <div class="pain">
+        <b>The adders are in prose</b>
+        <p>"Invoice costs extra." "Other colors are separate." "Price is negotiable for volume." Translation: your unit price is not your unit price.</p>
+      </div>
+      <div class="pain">
+        <b>The cheapest one is a trap</b>
+        <p>40% below the others usually means a skipped process, a substituted alloy, or a repricing the week you place the PO.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="sample">
+    <h2>What a report looks like</h2>
+    <p class="sub">Three real-shaped quotes for the same part — a WeChat message, a formal quotation sheet, and a three-line reply:</p>
+
+    <div class="card">
+      <table>
+        <tr><th>Supplier</th><th>Unit price</th><th>vs median</th><th>Flag</th></tr>
+        <tr><td>Three-line reply (7-day lead)</td><td class="num">¥25 / pc</td><td class="num">−40%</td><td><span class="tag red">lowball</span></td></tr>
+        <tr><td>Formal sheet (tax &amp; freight in)</td><td class="num">¥42 / pc</td><td class="num">0%</td><td><span class="tag grn">complete</span></td></tr>
+        <tr><td>WeChat message (15-day lead)</td><td class="num">¥45 / pc</td><td class="num">+7%</td><td><span class="tag yel">invoice extra</span></td></tr>
+      </table>
+      <div class="hint">
+        Median ¥42. The ¥25 quote is 60% of that — below the line, the report stops you from comparing it
+        apples-to-apples and asks you to verify scope first.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="font-size:17px;margin-bottom:12px">Three questions to send back before you sign</h2>
+      <table>
+        <tr><td style="width:32%">Tax basis</td><td>Is this price with 13% VAT? Can you issue a special VAT invoice?</td></tr>
+        <tr><td>Scope edges</td><td>What about tooling, freight, and samples — included or extra?</td></tr>
+        <tr><td>Price validity</td><td>How long is this price good for? Can you lock it for 30 days?</td></tr>
+      </table>
+      <p class="note" style="margin:12px 0 0">
+        Every line traces back to a sentence in the original. If the supplier didn't write it, the report says
+        "not stated" — it never fills in a number for them.
+      </p>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="sub">You don't tidy anything up. Send it messy.</p>
+    <ol class="steps">
+      <li><b>Send the raw quote</b><span>WeChat screenshots, PDFs, Excel pastes, or a photo of a printed sheet. The messier the better.</span></li>
+      <li><b>Get the report in ~30 minutes</b><span>One comparison table, a red/amber/green checklist, and the exact questions to send back. HTML + Excel.</span></li>
+      <li><b>Go negotiate</b><span>Cut what should be cut, ask what should be asked. The report checks the terms — it doesn't tell you who to buy from.</span></li>
+    </ol>
+    <div class="hint">Raw quotes are used for that one report only. Not stored, not resold, not shown to anyone else. Supplier names are masked by default.</div>
+  </section>
+
+  <section id="price">
+    <h2>Pricing</h2>
+    <p class="sub">Priced per quote, not per seat. Most buyers run a handful a year.</p>
+    <div class="price">
+      <div class="plan">
+        <div class="k">Try it</div>
+        <div class="p">Free<small> / 1 quote</small></div>
+        <ul>
+          <li>One quote</li>
+          <li>Full comparison table</li>
+          <li>Red/amber/green checklist</li>
+        </ul>
+        <a class="btn ghost" href="#contact">Send one</a>
+      </div>
+      <div class="plan hl">
+        <div class="k">Most common</div>
+        <div class="p">$9<small> / 3 quotes</small></div>
+        <ul>
+          <li>Three quotes, any time</li>
+          <li>Excel version included</li>
+          <li>Forwardable to your boss or client</li>
+          <li>Valid for 12 months</li>
+        </ul>
+        <a class="btn" href="#contact">Get this</a>
+      </div>
+      <div class="plan">
+        <div class="k">Heavy use</div>
+        <div class="p">$99<small> / year</small></div>
+        <ul>
+          <li>Unlimited quotes</li>
+          <li>Priority turnaround</li>
+          <li>Add your own check rules</li>
+        </ul>
+        <a class="btn ghost" href="#contact">Ask</a>
+      </div>
+    </div>
+    <p class="note">Payment via PayPal or bank transfer. Refund within 7 days if the report isn't useful.</p>
+  </section>
+
+  <section id="faq">
+    <h2>Questions</h2>
+    <details><summary>Is this "AI that quotes for me"?</summary>
+      <p>No. We don't quote, we check. Quoting is your supplier's job. Our job is to turn what they wrote into
+      a basis you can compare — especially the parts they left out. An AI-invented price is worse than no price.</p></details>
+    <details><summary>Do you work with Chinese-language quotes?</summary>
+      <p>That's the whole point. Chinese quotes, bilingual quotes, and English quotes from Chinese trading
+      companies are all fine — currency and freight basis get normalized and shown explicitly.</p></details>
+    <details><summary>What happens to my drawings and quotes?</summary>
+      <p>Used to produce that one report. Not used for training, not resold, not shown publicly. Supplier names
+      are masked by default. Happy to sign an NDA.</p></details>
+    <details><summary>Why not free?</summary>
+      <p>Free things don't answer to you. Nine dollars is what makes me read your quote carefully instead of
+      running it through a script.</p></details>
+    <details><summary>Can you also source the part?</summary>
+      <p>Not yet — that's the next step, and I'd rather ship a check you can trust first than a marketplace with
+      nobody in it.</p></details>
+  </section>
+
+  <section id="contact">
+    <div class="card" style="text-align:center">
+      <h2 style="margin-bottom:6px">Send one quote, see the report</h2>
+      <p class="sub" style="margin-bottom:18px">First one is free. Email is fastest.</p>
+      <p style="margin:0 0 6px;font-size:16px">Email: <strong>quote@hequbing.com</strong></p>
+      <p style="margin:0 0 6px;font-size:15px">WeChat: <strong>hecare888</strong></p>
+      <p class="note" style="margin-top:14px">Mon–Sat, 09:00–21:00 China time (UTC+8). Usually within 30 minutes.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div>QuoteSpec · built on the same open protocol as the <a href="https://github.com">schema and validator</a> (Apache-2.0)</div>
+    <div style="margin-top:6px">This service checks terms only. It does not generate prices and does not replace your sourcing decision.</div>
+  </footer>
+
+</div>
+</body>
+</html>
